@@ -4,6 +4,8 @@
 
 #include "Matrix.hpp"
 #include <stdexcept>
+#include <cmath>
+#include <cstring>
 
 
 Matrix::Matrix() : nrow(0), ncol(0), is_valid(false), ndata(nullptr) {}
@@ -22,9 +24,15 @@ Matrix::Matrix(size_t cols) {
 }
 
 Matrix::Matrix(size_t rows, size_t cols) {
-    this->nrow = rows;
-    this->ncol = cols;
-    this->ndata = new double[this->nrow * this->ncol];
+    if (rows == 0 || cols == 0) {
+        this->nrow = 0;
+        this->ncol = 0;
+        this->ndata = nullptr;
+    } else {
+        this->nrow = rows;
+        this->ncol = cols;
+        this->ndata = new double[this->nrow * this->ncol];
+    }
     this->is_valid = false;
 }
 
@@ -32,16 +40,12 @@ Matrix::~Matrix() {
     delete[] this->ndata;
 }
 
-[[maybe_unused]] Matrix::Matrix(const Matrix &mat) {
+Matrix::Matrix(const Matrix &mat) {
     this->nrow = mat.nrow;
     this->ncol = mat.ncol;
     this->ndata = new double[this->nrow * this->ncol];
 
-    for (size_t row = 0; row < this->nrow; row++) {
-        for (size_t col = 0; col < this->ncol; col++) {
-            this->coeffRef(row, col) = mat.coeffRef(row, col);
-        }
-    }
+    std::memcpy(this->ndata, mat.ndata, this->nrow * this->ncol);
 
     this->is_valid = true;
 }
@@ -50,6 +54,8 @@ Matrix Matrix::operator*(const Matrix &mat) {
     if (this->nrow != mat.ncol || !this->is_valid || !mat.is_valid) return {};
 
     auto *result = new Matrix(this->nrow, mat.ncol);
+    if (!result->ndata) return {};
+
     for (size_t row = 0; row < result->nrow; row++) {
         for (size_t col = 0; col < result->ncol; col++) {
             result->ndata[row * result->ncol + col] = 0;
@@ -64,7 +70,10 @@ Matrix Matrix::operator*(const Matrix &mat) {
 
 Matrix Matrix::operator-(const Matrix &mat) {
     if (this->nrow != mat.nrow || this->ncol != mat.ncol || !this->is_valid || !mat.is_valid) return {};
+
     auto *result = new Matrix(mat.nrow, mat.ncol);
+    if (!result->ndata) return {};
+
     for (size_t row = 0; row < this->nrow; row++) {
         for (size_t col = 0; col < this->ncol; col++) {
             result->data()[row * result->cols() + col] =
@@ -77,7 +86,10 @@ Matrix Matrix::operator-(const Matrix &mat) {
 
 Matrix Matrix::operator+(const Matrix &mat) {
     if (this->nrow != mat.nrow || this->ncol != mat.ncol || !this->is_valid || !mat.is_valid) return {};
+
     auto *result = new Matrix(mat.nrow, mat.ncol);
+    if (!result->ndata) return {};
+
     for (size_t row = 0; row < this->nrow; row++) {
         for (size_t col = 0; col < this->ncol; col++) {
             result->data()[row * result->cols() + col] =
@@ -119,11 +131,7 @@ Matrix &Matrix::operator=(const Matrix &mat) {
     this->ncol = mat.ncol;
     this->ndata = new double[this->nrow * this->ncol];
 
-    for (size_t row = 0; row < this->nrow; row++) {
-        for (size_t col = 0; col < this->ncol; col++) {
-            this->coeffRef(row, col) = mat.coeffRef(row, col);
-        }
-    }
+    std::memcpy(this->ndata, mat.ndata, this->nrow * this->ncol);
 
     this->is_valid = true;
     return *this;
@@ -159,12 +167,16 @@ bool Matrix::isValid() const {
 }
 
 void Matrix::resize(size_t rows, size_t cols) {
-    if (cols < 1 || rows < 1) throw std::invalid_argument("Arguments must be greater than 0.");
-
-    delete[] this->ndata;
-    this->nrow = rows;
-    this->ncol = cols;
-    this->ndata = new double[this->nrow * this->ncol];
+    if (rows == 0 || cols == 0) {
+        this->nrow = 0;
+        this->ncol = 0;
+        this->ndata = nullptr;
+    } else {
+        delete[] this->ndata;
+        this->nrow = rows;
+        this->ncol = cols;
+        this->ndata = new double[this->nrow * this->ncol];
+    }
     this->is_valid = false;
 }
 
@@ -199,6 +211,10 @@ size_t Matrix::cols() const {
 }
 
 Matrix &Matrix::setIdentity() {
+    if (this->ndata == nullptr) {
+        this->is_valid = false;
+        return *this;
+    }
     for (size_t row = 0; row < this->nrow; row++) {
         for (size_t col = 0; col < this->ncol; col++) {
             this->ndata[row * this->ncol + col] = (row == col);
@@ -209,6 +225,10 @@ Matrix &Matrix::setIdentity() {
 }
 
 Matrix &Matrix::setZero() {
+    if (!this->ndata) {
+        this->is_valid = false;
+        return *this;
+    }
     for (size_t row = 0; row < this->nrow; row++) {
         for (size_t col = 0; col < this->ncol; col++) {
             this->ndata[row * this->ncol + col] = 0;
@@ -219,6 +239,10 @@ Matrix &Matrix::setZero() {
 }
 
 Matrix &Matrix::setConstants(double value) {
+    if (!this->ndata) {
+        this->is_valid = false;
+        return *this;
+    }
     for (size_t row = 0; row < this->nrow; row++) {
         for (size_t col = 0; col < this->ncol; col++) {
             this->ndata[row * this->ncol + col] = value;
@@ -248,6 +272,12 @@ Matrix &Matrix::setConstants(size_t rows, size_t cols, double value) {
 
 Matrix Matrix::transpose() {
     Matrix temp(this->nrow, this->ncol);
+
+    if (!temp.ndata) {
+        this->is_valid = false;
+        return *this;
+    }
+
     for (size_t row = 0; row < this->nrow; row++) {
         for (size_t col = 0; col < this->ncol; col++) {
             temp.ndata[row * temp.ncol + col] = this->ndata[col * this->ncol + row];
@@ -257,11 +287,84 @@ Matrix Matrix::transpose() {
 }
 
 Matrix Matrix::inverse() {
-    return Matrix();
+    if (!this->is_valid || this->ncol != this->nrow) return {};
+
+    double det = this->det();
+
+    *this = this->transpose() / det;
+
+    return *this;
+}
+
+double determinant(double **matrix, size_t size) {
+    double det = 0;
+    int sign = 1;
+
+    // Base Case
+    if (size == 1) {
+        det = matrix[0][0];
+    } else if (size == 2) {
+        det = (matrix[0][0] * matrix[1][1])
+              - (matrix[0][1] * matrix[1][0]);
+    }
+
+        // Perform the Laplace Expansion
+    else {
+        for (size_t i = 0; i < size; i++) {
+
+            // Stores the cofactor matrix
+            auto **cofactor = new double *[size - 1];
+            for (size_t j = 0; j < size - 1; j++) {
+                cofactor[j] = new double[size - 1];
+            }
+            int sub_i = 0, sub_j = 0;
+            for (size_t j = 1; j < size; j++) {
+                for (size_t k = 0; k < size; k++) {
+                    if (k == i) {
+                        continue;
+                    }
+                    cofactor[sub_i][sub_j] = matrix[j][k];
+                    sub_j++;
+                }
+                sub_i++;
+                sub_j = 0;
+            }
+
+            // Update the determinant value
+            det += sign * matrix[0][i]
+                   * determinant(cofactor, size - 1);
+            sign = -sign;
+            for (size_t j = 0; j < size - 1; j++) {
+                delete[] cofactor[j];
+            }
+            delete[] cofactor;
+        }
+    }
+
+    // Return the final determinant value
+    return det;
 }
 
 double Matrix::det() {
-    return 0;
+    if (!this->is_valid || this->ncol != this->nrow) return std::nan("NaN");
+    size_t size = this->ncol;
+
+    auto **temp = new double *[size];
+    for (size_t row = 0; row < size; row++) {
+        temp[row] = new double[size];
+        for (size_t col = 0; col < size; col++) {
+            temp[row][col] = this->ndata[row * this->ncol + col];
+        }
+    }
+
+    double _det = determinant(temp, size);
+
+    for (size_t row = 0; row < size; row++) {
+        if (temp[row]) delete[] temp[row];
+    }
+    delete[] temp;
+
+    return _det;
 }
 
 Matrix Matrix::identity(size_t rows, size_t cols) {
@@ -278,7 +381,8 @@ Matrix Matrix::constants(size_t rows, size_t cols, double value) {
 }
 
 Matrix operator*(double value, const Matrix &mat) {
-    return Matrix();
+    Matrix temp = mat;
+    return temp * value;
 }
 
 std::ostream &operator<<(std::ostream &stream, const Matrix &matrix) {

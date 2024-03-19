@@ -10,13 +10,13 @@ private:
 public:
     Matrix();
 
-    [[maybe_unused]] explicit Matrix(size_t cols);
+    explicit Matrix(size_t cols);
 
     Matrix(size_t rows, size_t cols);
 
     ~Matrix();
 
-    [[maybe_unused]] Matrix(const Matrix &mat);
+    Matrix(const Matrix &mat);
 
     Matrix operator*(const Matrix &mat);
 
@@ -40,21 +40,21 @@ public:
 
     Matrix &operator/=(double value);
 
-    [[nodiscard]] bool isValid() const;
+    bool isValid() const;
 
     void resize(size_t rows, size_t cols);
 
-    [[nodiscard]] const double &coeffRef(size_t rowIdx, size_t colIdx) const;
+    const double &coeffRef(size_t rowIdx, size_t colIdx) const;
 
     double &coeffRef(size_t rowIdx, size_t colIdx);
 
-    [[nodiscard]] const double *data() const;
+    const double *data() const;
 
     double *data();
 
-    [[nodiscard]] size_t rows() const;
+    size_t rows() const;
 
-    [[nodiscard]] size_t cols() const;
+    size_t cols() const;
 
     Matrix &setIdentity();
 
