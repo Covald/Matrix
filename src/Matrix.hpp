@@ -3,12 +3,18 @@
 
 class Matrix final {
 private:
-    size_t nrow, ncol;
-    bool is_valid;
-    double *ndata;
+    size_t n_row{}, n_col{};
+    bool is_valid{false};
+    double *n_data{};
+
+    double &at(size_t row, size_t col);
+
+    double &at(size_t row, size_t col) const;
+
+    bool init(size_t rows, size_t cols);
 
 public:
-    Matrix();
+    Matrix() = default;
 
     explicit Matrix(size_t cols);
 
@@ -18,15 +24,15 @@ public:
 
     Matrix(const Matrix &mat);
 
-    Matrix operator*(const Matrix &mat);
+    Matrix operator*(const Matrix &mat) const;
 
-    Matrix operator-(const Matrix &mat);
+    Matrix operator-(const Matrix &mat) const;
 
-    Matrix operator+(const Matrix &mat);
+    Matrix operator+(const Matrix &mat) const;
 
-    Matrix operator*(double value);
+    Matrix operator*(double value) const;
 
-    Matrix operator/(double value);
+    Matrix operator/(double value) const;
 
     Matrix &operator=(const Matrix &mat);
 
@@ -68,11 +74,11 @@ public:
 
     Matrix &setConstants(size_t rows, size_t cols, double value);
 
-    Matrix transpose();
+    Matrix transpose() const;
 
-    Matrix inverse();
+    Matrix inverse() const;
 
-    double det();
+    double det() const;
 
     static Matrix identity(size_t rows, size_t cols);
 
@@ -82,5 +88,17 @@ public:
 
     friend Matrix operator*(double value, const Matrix &mat);
 
-    friend std::ostream &operator<<(std::ostream &stream, const Matrix &matrix);
+    Matrix submatrix(uint i, uint j) const;
+
+    double minordet(uint i, uint j) const;
+
+    double cofactor(uint i, uint j) const;
+
+    Matrix minor_matrix() const;
+
+    Matrix cofactor_matrix() const;
+
+    Matrix adj() const;
 };
+
+std::ostream &operator<<(std::ostream &stream, const Matrix &matrix);
